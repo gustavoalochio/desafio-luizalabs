@@ -31,10 +31,11 @@ func (d *accessReader) Read(reader io.Reader) ([]entity.Access, error) {
 
 	var accessList []entity.Access
 
+	// generate the access struct list using NewAccess entity func
 	for i := 0; i < len(data); i++ {
 		count, _ := strconv.Atoi(data[i][0])
 		accessList = append(accessList, entity.NewAccess(data[i][1], count))
 	}
 
-	return accessList, nil // TO-DO unmarshal csv -> entity
+	return accessList, nil
 }

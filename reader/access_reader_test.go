@@ -1,37 +1,37 @@
-package reader	
+package reader
 
 import (
-    "encoding/csv"
-    "fmt"
-    "os"
-    "io"
-    "testing"
-    "reader"
+	"bytes"
+	"github.com/gustavoalochio/desafio-luizalabs/entity"
+	"github.com/stretchr/testify/assert"
+	"testing"
 )
 
+var (
+	accessListRead = []entity.Access{
+		entity.Access{
+			Url:   "loja.google.com",
+			Count: 100,
+		},
+	}
+)
 
-func readFile(reader io.Reader) ([][]string, error) {
-    r := csv.NewReader(reader)
-    lines, err := r.ReadAll()
-    if err != nil {
-        log.Fatal(err)
-    }
-    return lines, err
-}
+func TestAccessReader_Read(t *testing.T) {
 
-func TestReadFile(t *testing.T) {
+	t.Run("success", func(t *testing.T) {
+		//// arrange
+		var buffer bytes.Buffer
+		buffer.WriteString("100,loja.google.com")
+		domainReader := NewAccessReader()
 
-    // arrange
-    var buffer bytes.Buffer
-    buffer.WriteString("10,loja.google.com")
-    domainReader := reader.NewDomainReader()
+		// action
+		content, err := domainReader.Read(&buffer)
+		if err != nil {
+			t.Error("Failed to read csv data")
+		}
 
-    // action
-    content, err := domainReader.Read(&buffer)
-    if err != nil {
-        t.Error("Failed to read csv data")
-    }
-
-    // assert
-    t.Assert() // ...
+		//// assert
+		assert.NotNil(t, content)
+		assert.Equal(t, content, accessListRead)
+	})
 }
