@@ -1,12 +1,15 @@
 package counter
 
 import (
+	"fmt"
 	"github.com/gustavoalochio/desafio-luizalabs/entity"
+	"sort"
 	"strings"
 )
 
 type CounterDomain interface {
-	CountDomains(data []entity.Access) map[string]int
+	CountDomains(data []entity.Access) map[string]*entity.Domain
+	PrintDomainsSorted(domains map[string]*entity.Domain)
 }
 
 type counterDomain struct{}
@@ -15,49 +18,75 @@ func NewCounterDomain() CounterDomain {
 	return &counterDomain{}
 }
 
-func (d *counterDomain) CountDomains(data []entity.Access) map[string]int {
+// receive a access list and split the access struct in domains struct
+/*
+Example:
 
-	m := map[string]int{}
+loja.google.com
+yahoo.com
+
+Each level in this tree has a hashmap
+				  com
+				/  	  \
+               /       \
+            google      yahoo
+			/
+           /
+         loja
+*/
+func (d *counterDomain) CountDomains(data []entity.Access) map[string]*entity.Domain {
+
+	domains := map[string]*entity.Domain{}
 
 	for _, access := range data {
 
-		domains := split(access.Url)
+		tokens := strings.Split(access.Url, ".")
 
-		for _, domain := range domains {
+		subDomains := domains
 
-			_, ok := m[domain]
+		// loja.google.com -> tokens = [loja, google, com]
+		for len(tokens) > 0 {
+			lastToken := tokens[len(tokens)-1]
+
+			var domain *entity.Domain
+
+			_, ok := subDomains[lastToken]
 			if !ok {
-				m[domain] = access.Count
-				continue
+				domain = entity.NewDomain(lastToken, access.Count)
+				subDomains[lastToken] = domain
+			} else {
+				domain = subDomains[lastToken]
+				domain.Count += access.Count
 			}
 
-			m[domain] += access.Count
-
+			subDomains = domain.SubDomains
+			tokens = tokens[:len(tokens)-1]
 		}
-	}
-
-	return m
-
-}
-
-// loja.google.com -> [loja.google.com, google.com, com ]
-func split(url string) []string {
-
-	urlTokens := strings.Split(url, ".") // [loja, google, com]
-
-	var domains []string
-
-	for i := 0; i < len(urlTokens); i++ { // 2
-
-		var tokens []string
-
-		for j := i; j < len(urlTokens); j++ { // 2
-			tokens = append(tokens, urlTokens[j]) // [com]
-		}
-
-		domains = append(domains, strings.Join(tokens, ".")) // [loja.google.com, google.com, com]
 	}
 
 	return domains
+}
+func (d *counterDomain) PrintDomainsSorted(domains map[string]*entity.Domain) {
+	d.printDomainsSorted(domains, nil)
+}
 
+func (d *counterDomain) printDomainsSorted(domains map[string]*entity.Domain, tokens []string) {
+
+	if domains == nil {
+		return
+	}
+
+	keys := make([]string, 0, len(domains))
+
+	for k := range domains {
+		keys = append(keys, k)
+	}
+
+	sort.Strings(keys)
+
+	for _, k := range keys {
+		tokensUse := append([]string{domains[k].Token}, tokens...)
+		fmt.Println(domains[k].Count, strings.Join(tokensUse, "."))
+		d.printDomainsSorted(domains[k].SubDomains, tokensUse)
+	}
 }
