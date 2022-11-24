@@ -18,6 +18,7 @@ func main() {
 	// to close the file at the end of the program
 	defer f.Close()
 
+	// receive a csv file to generate a access struct list
 	accessReader := reader.NewAccessReader()
 	accessList, err := accessReader.Read(f)
 
@@ -26,9 +27,10 @@ func main() {
 		return
 	}
 
+	//receive access struct list to create and count the domains
 	counterDomain := counter.NewCounterDomain()
 	countDomainList := counterDomain.CountDomains(accessList)
 
-	// print the array
-	fmt.Printf("%+v\n", countDomainList)
+	// print the domains struct
+	counterDomain.PrintDomainsSorted(countDomainList)
 }
